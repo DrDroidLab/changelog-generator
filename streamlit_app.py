@@ -2,9 +2,11 @@ import streamlit as st
 import re
 from utils.github_data_fetch import fetch_prs_merged_between_dates, fetch_commits_from_prs
 from utils.summarisation import gpt_inference_changelog, extract_messages_from_commits
+from htbuilder import HtmlElement, div, ul, li, br, hr, a, p, img, styles, classes, fonts
+from htbuilder.units import percent, px
 
 st.title('Changelog Auto-Generator')
-st.text('This app generates a changelog based on the commits in a repository.')
+st.markdown("This app generates a changelog based on the commits in a repository. [See code on Github](https://github.com/DrDroidLab/changelog-generator)")
 
 def validate_github_url(url):
     pattern = r'^https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$'
@@ -50,6 +52,9 @@ if(st.session_state.clicked):
     st.text("Fetching PRs...")
     prs = fetch_prs_merged_between_dates(owner, repo, start_date, end_date, main_branch)
     st.text(f"Fetched {prs.shape[0]} PRs")
+    if prs.shape[0] == 0:
+        st.error("No PRs found in the given date range")
+        st.stop()
     st.text("Fetching commits...")
     commits = fetch_commits_from_prs(prs, owner, repo)
     st.text(f"Fetched {commits.shape[0]} commits")
@@ -57,7 +62,78 @@ if(st.session_state.clicked):
     prompt_body = extract_messages_from_commits(commits)
     st.text("Commit messages extracted")
     st.text("Generating changelog...")
-    changelog = gpt_inference_changelog(prompt_body)
+    changelog = gpt_inference_changelog(prompt_body, start_date, end_date)
     st.text("Changelog generated")
     st.markdown(changelog)
     # st.button('Generate Changelog', key='generate_button', on_click='enable')
+
+
+def image(src_as_string, **style):
+    return img(src=src_as_string, style=styles(**style))
+
+def link(hyperlink, text, **style):
+    return a(_href=hyperlink, _target="_blank", style=styles(**style))(text)
+
+
+def layout(*args):
+    style = """
+    <style>
+      # MainMenu {visibility: hidden;}
+      footer {visibility: hidden;}
+     .stApp { bottom: 105px; }
+    </style>
+    """
+
+    style_div = styles(
+        position="fixed",
+        left=0,
+        bottom=0,
+        margin=px(0, 0, 0, 0),
+        width=percent(100),
+        color="black",
+        text_align="center",
+        height="auto",
+        opacity=1
+    )
+
+    style_hr = styles(
+        display="block",
+        margin=px(8, 8, "auto", "auto"),
+        border_style="inset",
+        border_width=px(2)
+    )
+
+    body = p()
+    foot = div(
+        style=style_div
+    )(
+        hr(
+            style=style_hr
+        ),
+        body
+    )
+
+    st.markdown(style, unsafe_allow_html=True)
+
+    for arg in args:
+        if isinstance(arg, str):
+            body(arg)
+
+        elif isinstance(arg, HtmlElement):
+            body(arg)
+
+    st.markdown(str(foot), unsafe_allow_html=True)
+
+
+def footer():
+    my_args = [
+        "Made with ❤️ by ",
+        br(),
+        link("https://drdroid.io", image(
+            'https://assets-global.website-files.com/642ad9ebc00f9544d49b1a6b/652262b9496b7b6fa1843f19_Frame%2013910.png')),
+    ]
+    layout(*my_args)
+
+
+if __name__ == "__main__":
+    footer()

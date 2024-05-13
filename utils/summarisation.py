@@ -17,7 +17,7 @@ def extract_messages_from_commits(pr_commit_data):
     return overall_text
 
 
-def gpt_inference_changelog(commits):
+def gpt_inference_changelog(commits, start_date, end_date):
 
     system_prompt = """# Docs Changelog Guidelines
 
@@ -46,8 +46,6 @@ def gpt_inference_changelog(commits):
     ### Unreleased
     - New method `fetchPotatoes()` fetching potatoes; details at [the project page](#)
 
-    ## [v0.2] - 2017-10-26
-
     ### Added
     - New method `returnWeirdFace()` returning a random avatar URL for a anonymous customer
     - New object `weirdFaces` used in `returnWeirdFace()` method
@@ -66,7 +64,7 @@ def gpt_inference_changelog(commits):
 
     prompt = [
         {"type": "text",
-            "text": f"""I am sharing the text of all commits that were merged into main from the last two weeks. {commits} Use it to create a changelog in the format as suggested in the System Prompt."""}
+            "text": f"""I am sharing the text of all commits that were merged into main between {start_date} and {end_date}. {commits} Use it to create a changelog in the format as suggested in the System Prompt."""}
     ]
 
     from openai import OpenAI
