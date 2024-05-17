@@ -64,7 +64,7 @@ def gpt_inference_changelog(commits, start_date, end_date):
 
     prompt = [
         {"type": "text",
-            "text": f"""I am sharing the text of all commits that were merged into main between {start_date} and {end_date}. {commits} Use it to create a changelog in the format as suggested in the System Prompt."""}
+            "text": f"""I am sharing the text of all commits that were merged into main between {start_date} and {end_date}. {commits} Use it to create a changelog in the format as suggested in the System Prompt. Keep the entire output in a code block, ending with     Made with [Changelog Generator](changelog-generator.streamlit.io)"""}
     ]
 
     from openai import OpenAI
@@ -79,6 +79,6 @@ def gpt_inference_changelog(commits, start_date, end_date):
     )
 
     print(response.choices[0])
-    print(response.choices[0].message.content)
-
-    return response.choices[0].message.content
+    summary = response.choices[0].message.content
+    print(summary)
+    return summary
