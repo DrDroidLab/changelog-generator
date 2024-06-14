@@ -77,10 +77,15 @@ def fetch_prs_merged_between_dates(owner, repo, start_date, end_date, main_branc
         prs = response.json()
         # Create a DataFrame from the merged PRs
         df = pd.DataFrame(prs)
+        try:
+            repo_description = prs[0]['head']['repo']['description']
+        except:
+            repo_description = ''
+            print('repo description fetch failed')
         df = df[~df['merged_at'].isnull()]
         df['merged_at'] = pd.to_datetime(df['merged_at'])
         df = df[(df['merged_at'].dt.date >= start_date) & (df['merged_at'].dt.date <= end_date)]
-        return df
+        return df, repo_description
     else:
         print(f"Failed to fetch PRs merged between {start_date} and {end_date}. Status code: {response.status_code} - {response.text}")
-        return None
+        return None, ''
