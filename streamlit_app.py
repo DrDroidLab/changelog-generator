@@ -50,11 +50,11 @@ st.button('Generate Changelog', key='generate_button', on_click=click_button)
 if(st.session_state.clicked):
     st.session_state.clicked = False
     st.text("Fetching PRs...")
-    prs = fetch_prs_merged_between_dates(owner, repo, start_date, end_date, main_branch)
-    st.text(f"Fetched {prs.shape[0]} PRs")
-    if prs.shape[0] == 0:
+    prs, repo_description = fetch_prs_merged_between_dates(owner, repo, start_date, end_date, main_branch)
+    if prs is None or prs.shape[0] == 0:
         st.error("No PRs found in the given date range")
         st.stop()
+    st.text(f"Fetched {prs.shape[0]} PRs")
     st.text("Fetching commits...")
     commits = fetch_commits_from_prs(prs, owner, repo)
     st.text(f"Fetched {commits.shape[0]} commits")
@@ -62,7 +62,7 @@ if(st.session_state.clicked):
     prompt_body = extract_messages_from_commits(commits)
     st.text("Commit messages extracted")
     st.text("Generating changelog...")
-    changelog = gpt_inference_changelog(prompt_body, start_date, end_date)
+    changelog = gpt_inference_changelog(prompt_body, start_date, end_date,owner, repo, repo_description, main_branch)
     st.text("Changelog generated")
     st.markdown(changelog)
     # st.button('Generate Changelog', key='generate_button', on_click='enable')

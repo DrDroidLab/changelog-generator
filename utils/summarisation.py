@@ -17,7 +17,7 @@ def extract_messages_from_commits(pr_commit_data):
     return overall_text
 
 
-def gpt_inference_changelog(commits, start_date, end_date):
+def gpt_inference_changelog(commits, start_date, end_date, owner, repo, repo_description, main_branch='main'):
 
     system_prompt = """# Docs Changelog Guidelines
 
@@ -61,10 +61,19 @@ def gpt_inference_changelog(commits, start_date, end_date):
 
     ...
     ```"""
-
     prompt = [
-        {"type": "text",
-            "text": f"""I am sharing the text of all commits that were merged into main between {start_date} and {end_date}. {commits} Use it to create a changelog in the format as suggested in the System Prompt. Keep the entire output in a code block, ending with     Made with [Changelog Generator](changelog-generator.streamlit.io)"""}
+        {
+            "type": "text",
+            "text": f"""
+            I am sharing the text of all commits that were merged into {main_branch} of {owner}/{repo} between {start_date} and {end_date}. 
+            {commits}
+            
+            Use this information to create a changelog in the format suggested in the System Prompt. For the changelog's context, the description of the repo is: {repo_description}. 
+
+            Keep the entire output in a code block, ending with:
+            Made with [Changelog Generator](changelog-generator.streamlit.io)
+            """
+        }
     ]
 
     from openai import OpenAI
