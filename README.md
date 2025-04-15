@@ -11,5 +11,4 @@ This document helps you auto-generate changelog for your Github Repository.
 
 
 * If you have any feedback or requests, please raise them - [here](https://github.com/DrDroidLab/changelog-generator/issues).
-* 
 ### Contributions welcome.
