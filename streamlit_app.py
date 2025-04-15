@@ -1,6 +1,6 @@
 import streamlit as st
 import re
-from utils.github_data_fetch import fetch_prs_merged_between_dates, fetch_commits_from_prs
+from utils.github_data_fetch import fetch_prs_merged_between_dates, fetch_commits_from_prs, fetch_org_users
 from utils.summarisation import gpt_inference_changelog, extract_messages_from_commits
 from htbuilder import HtmlElement, div, ul, li, br, hr, a, p, img, styles, classes, fonts
 from htbuilder.units import percent, px
@@ -34,6 +34,18 @@ if (st.checkbox('Change main branch name', value=False)):
 else:
     main_branch = 'main'
 
+filter_by_user = st.checkbox('Filter by user', value=False)
+if filter_by_user:
+    # drop down.. list can be fetched using fetch_org_users function in github_data_fetch.py
+    st.text("Fetching users from the organization...")
+    users = fetch_org_users(owner)
+    if users is None:
+        st.error("Failed to fetch users from the organization. Cannot filter by user")
+    else:
+        user = st.selectbox('Select User', users)
+        if user:
+            st.session_state.user = user
+
 st.text("Review the details and click the button below to generate the changelog.")
 st.markdown(f"Repository: {owner}/{repo}")
 st.markdown(f"Date Range: {start_date} to {end_date}")
@@ -56,9 +68,27 @@ if(st.session_state.clicked):
         st.stop()
     st.text(f"Fetched {prs.shape[0]} PRs")
     st.text("Fetching commits...")
-    commits = fetch_commits_from_prs(prs, owner, repo)
+    
+    # Add progress bar with text
+    progress_bar = st.empty()
+    progress_text = st.empty()
+    
+    def update_progress(progress):
+        progress_bar.progress(progress)
+        progress_text.text(f"Processing PRs: {int(progress * 100)}% ({int(progress * len(prs.index))}/{len(prs.index)} PRs)")
+        if progress == 1.0:  # When progress is 100%
+            progress_bar.empty()  # Clear the progress bar
+            progress_text.empty()  # Clear the progress text
+    
+    commits = fetch_commits_from_prs(prs, owner, repo, progress_callback=update_progress)
+    
     st.text(f"Fetched {commits.shape[0]} commits")
-    st.text("Extracting commit messages...")
+    if (filter_by_user) and (users is not None):
+        st.text("Extracting commit messages for specific user...")
+        commits = commits[commits['Commit Author'] == st.session_state.user]
+        if commits.shape[0] == 0:
+            st.error("No commits found for the selected user")
+            st.stop()
     prompt_body = extract_messages_from_commits(commits)
     st.text("Commit messages extracted")
     st.text("Generating changelog...")
